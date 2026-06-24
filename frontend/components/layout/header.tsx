@@ -19,10 +19,10 @@ export function Header() {
 
   return (
     <header
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+      className={`fixed top-0 w-full z-50 transition-all duration-300 border-b ${
         isScrolled
-          ? "bg-[#2A0206]/80 backdrop-blur-md border-b border-[#D4AF37]/20 py-3"
-          : "bg-transparent py-5"
+          ? "bg-[#2A0206]/80 backdrop-blur-md border-[#D4AF37]/20 py-3"
+          : "bg-transparent border-transparent py-5"
       }`}
     >
       <div className="container mx-auto px-4 md:px-6 flex items-center justify-between">
