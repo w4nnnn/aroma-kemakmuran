@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-maroon-base: #2A0206;
+  --color-maroon-elevated: #3A040A;
+  --color-gold-primary: #D4AF37;
+  --color-gold-glow: #F3E5AB;
+  --color-text-primary: #FDFBF7;
+  --color-text-muted: #F5F2EB;
+  
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+}
