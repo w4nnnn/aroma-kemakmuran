@@ -36,14 +36,14 @@ export function Header() {
             <Link 
               key={cat.id} 
               href={`/kategori/${cat.slug}`}
-              className="text-sm font-medium text-text-muted hover:text-gold-primary transition-colors p-2"
+              className="text-sm font-medium text-text-muted hover:text-gold-primary transition-colors py-3 px-2"
             >
               {cat.name}
             </Link>
           ))}
           <a 
             href="#kontak" 
-            className="text-sm font-medium text-text-muted hover:text-gold-primary transition-colors p-2"
+            className="text-sm font-medium text-text-muted hover:text-gold-primary transition-colors py-3 px-2"
           >
             Kontak
           </a>
@@ -51,7 +51,7 @@ export function Header() {
 
         {/* Mobile Toggle */}
         <button 
-          className="md:hidden p-2 text-gold-primary"
+          className="md:hidden w-11 h-11 flex items-center justify-center text-gold-primary"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle menu"
         >
@@ -73,6 +73,13 @@ export function Header() {
                 {cat.name}
               </Link>
             ))}
+            <a 
+              href="#kontak" 
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-6 py-3 text-text-muted hover:text-gold-primary hover:bg-[#2A0206] transition-colors"
+            >
+              Kontak
+            </a>
           </nav>
         </div>
       )}
