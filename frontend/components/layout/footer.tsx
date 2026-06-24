@@ -24,13 +24,13 @@ export function Footer() {
         <div id="kontak">
           <h4 className="font-medium text-text-primary mb-4">Hubungi Kami</h4>
           <div className="flex gap-4">
-            <a href="#" className="w-10 h-10 rounded-full bg-maroon-elevated flex items-center justify-center text-gold-primary hover:bg-gold-primary hover:text-maroon-base transition-colors">
+            <a href="#" className="w-11 h-11 rounded-full bg-maroon-elevated flex items-center justify-center text-gold-primary hover:bg-gold-primary hover:text-maroon-base transition-colors">
               <Instagram size={20} />
             </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-maroon-elevated flex items-center justify-center text-gold-primary hover:bg-gold-primary hover:text-maroon-base transition-colors">
+            <a href="#" className="w-11 h-11 rounded-full bg-maroon-elevated flex items-center justify-center text-gold-primary hover:bg-gold-primary hover:text-maroon-base transition-colors">
               <Facebook size={20} />
             </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-maroon-elevated flex items-center justify-center text-gold-primary hover:bg-gold-primary hover:text-maroon-base transition-colors">
+            <a href="#" className="w-11 h-11 rounded-full bg-maroon-elevated flex items-center justify-center text-gold-primary hover:bg-gold-primary hover:text-maroon-base transition-colors">
               <MessageCircle size={20} />
             </a>
           </div>
