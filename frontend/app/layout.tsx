@@ -3,6 +3,7 @@ import { Playfair_Display, Montserrat } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { SmoothScroll } from "@/components/layout/smooth-scroll";
+import { Footer } from "@/components/layout/footer";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -33,7 +34,7 @@ export default function RootLayout({
         <main className="flex-grow">
           <SmoothScroll>{children}</SmoothScroll>
         </main>
-        {/* Footer will go here */}
+        <Footer />
       </body>
     </html>
   );
