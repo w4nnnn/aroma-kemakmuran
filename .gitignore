@@ -1,0 +1,25 @@
+# Workspace configs
+.omo/
+.serena/
+.superpowers/
+
+# Media / Drafts
+*.jpeg
+*.jpg
+*.png
+
+# Node modules
+node_modules/
+
+# Next.js
+.next/
+out/
+build/
+
+# IDEs and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Keep docs & specs
+!docs/
