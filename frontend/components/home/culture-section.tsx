@@ -14,10 +14,13 @@ export function CultureSection() {
   const container = useRef<HTMLElement>(null);
 
   useGSAP(() => {
-    gsap.from(".culture-card", {
-      scrollTrigger: { trigger: container.current, start: "top 75%" },
-      y: 30, opacity: 0, stagger: 0.15,
-    });
+    gsap.fromTo(".culture-card", 
+      { y: 30, opacity: 0 },
+      {
+        scrollTrigger: { trigger: container.current, start: "top 75%" },
+        y: 0, opacity: 1, stagger: 0.15,
+      }
+    );
   }, { scope: container });
 
   return (

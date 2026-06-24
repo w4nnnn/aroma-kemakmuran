@@ -8,10 +8,13 @@ export function QuoteSection() {
   const container = useRef<HTMLElement>(null);
 
   useGSAP(() => {
-    gsap.from(".quote-anim", {
-      scrollTrigger: { trigger: container.current, start: "top 80%" },
-      scale: 0.95, opacity: 0, duration: 1,
-    });
+    gsap.fromTo(".quote-anim", 
+      { scale: 0.95, opacity: 0 },
+      {
+        scrollTrigger: { trigger: container.current, start: "top 80%" },
+        scale: 1, opacity: 1, duration: 1,
+      }
+    );
   }, { scope: container });
 
   return (

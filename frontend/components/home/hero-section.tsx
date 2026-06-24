@@ -7,12 +7,10 @@ export function HeroSection() {
   const container = useRef<HTMLElement>(null);
 
   useGSAP(() => {
-    gsap.from(".hero-anim", {
-      y: 30,
-      opacity: 0,
-      stagger: 0.2,
-      delay: 0.2,
-    });
+    gsap.fromTo(".hero-anim", 
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, stagger: 0.2, delay: 0.2 }
+    );
   }, { scope: container });
 
   return (

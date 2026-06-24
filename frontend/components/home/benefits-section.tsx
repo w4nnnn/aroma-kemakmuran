@@ -16,10 +16,13 @@ export function BenefitsSection() {
   const container = useRef<HTMLElement>(null);
 
   useGSAP(() => {
-    gsap.from(".benefit-item", {
-      scrollTrigger: { trigger: container.current, start: "top 75%" },
-      y: 20, opacity: 0, stagger: 0.1,
-    });
+    gsap.fromTo(".benefit-item", 
+      { y: 20, opacity: 0 },
+      {
+        scrollTrigger: { trigger: container.current, start: "top 75%" },
+        y: 0, opacity: 1, stagger: 0.1,
+      }
+    );
   }, { scope: container });
 
   return (

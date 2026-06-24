@@ -7,15 +7,13 @@ export function ProductDescSection() {
   const container = useRef<HTMLElement>(null);
 
   useGSAP(() => {
-    gsap.from(".desc-anim", {
-      scrollTrigger: {
-        trigger: container.current,
-        start: "top 80%",
-      },
-      y: 30,
-      opacity: 0,
-      stagger: 0.2,
-    });
+    gsap.fromTo(".desc-anim", 
+      { y: 30, opacity: 0 },
+      {
+        scrollTrigger: { trigger: container.current, start: "top 80%" },
+        y: 0, opacity: 1, stagger: 0.2,
+      }
+    );
   }, { scope: container });
 
   return (
