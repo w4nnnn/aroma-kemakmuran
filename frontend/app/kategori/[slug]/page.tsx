@@ -2,8 +2,9 @@ import Link from "next/link";
 import { mockCategories, mockProducts } from "@/lib/mock-data";
 import { notFound } from "next/navigation";
 
-export default function CategoryPage({ params }: { params: { slug: string } }) {
-  const category = mockCategories.find(c => c.slug === params.slug);
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params;
+  const category = mockCategories.find(c => c.slug === resolvedParams.slug);
   
   if (!category) {
     notFound();

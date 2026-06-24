@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, MessageCircle } from "lucide-react";
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
-  const product = mockProducts.find(p => p.slug === params.slug);
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params;
+  const product = mockProducts.find(p => p.slug === resolvedParams.slug);
   
   if (!product || !product.is_active) {
     notFound();
