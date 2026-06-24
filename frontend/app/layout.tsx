@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${playfair.variable} ${montserrat.variable} scroll-smooth`}>
+    <html lang="id" className={`${playfair.variable} ${montserrat.variable} scroll-smooth`} data-scroll-behavior="smooth">
       <body className="font-sans antialiased bg-[#2A0206] text-[#FDFBF7] selection:bg-[#D4AF37] selection:text-[#2A0206] min-h-screen flex flex-col pt-[80px]">
         <Header />
         <main className="flex-grow">
