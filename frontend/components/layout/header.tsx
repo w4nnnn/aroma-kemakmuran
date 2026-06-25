@@ -2,17 +2,20 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockCategories } from "@/lib/mock-data";
 import { Menu, X } from "lucide-react";
+import { pb } from "@/lib/pocketbase";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    pb.collection('categories').getFullList({ sort: 'name' })
+      .then(res => setCategories(res))
+      .catch(err => console.error(err));
+      
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -32,7 +35,7 @@ export function Header() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
-          {mockCategories.map((cat) => (
+          {categories.map((cat) => (
             <Link 
               key={cat.id} 
               href={`/kategori/${cat.slug}`}
@@ -63,7 +66,7 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-maroon-elevated border-b border-[#D4AF37]/20 shadow-xl">
           <nav className="flex flex-col py-4">
-            {mockCategories.map((cat) => (
+            {categories.map((cat) => (
               <Link 
                 key={cat.id} 
                 href={`/kategori/${cat.slug}`}
