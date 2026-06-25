@@ -2,23 +2,27 @@
 
 import { useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
+import { pb } from "@/lib/pocketbase";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, X } from "lucide-react";
 
 export default function AdminCategoryPage() {
-  const { categories, products, addCategory, updateCategory, deleteCategory } = useAdmin();
+  const { categories, products, fetchData } = useAdmin();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: "", slug: "" });
 
-  const getProductCount = (categoryId: string) => products.filter(p => p.categoryId === categoryId).length;
+  const getProductCount = (categoryId: string) => products.filter(p => p.category === categoryId).length;
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (getProductCount(id) > 0) {
       alert("Tidak bisa menghapus kategori yang masih memiliki produk!");
       return;
     }
-    if (confirm("Hapus kategori ini?")) deleteCategory(id);
+    if (confirm("Hapus kategori ini?")) {
+      await pb.collection('categories').delete(id);
+      fetchData();
+    }
   };
 
   const handleEdit = (cat: any) => {
@@ -33,15 +37,16 @@ export default function AdminCategoryPage() {
     setShowForm(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
-      id: editingId || `c${Date.now()}`,
       name: formData.name,
       slug: formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
     };
-    if (editingId) updateCategory(payload);
-    else addCategory(payload);
+    if (editingId) await pb.collection('categories').update(editingId, payload);
+    else await pb.collection('categories').create(payload);
+    
+    fetchData();
     setShowForm(false);
   };
 

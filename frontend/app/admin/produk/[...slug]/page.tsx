@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { useAdmin } from "@/lib/admin-context";
+import { pb } from "@/lib/pocketbase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
@@ -9,20 +10,19 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export default function ProductFormPage({ params }: { params: Promise<{ slug: string[] }> }) {
-  // Use React.use to unwrap params since it's a Promise in Next.js 15+
   const resolvedParams = use(params);
   
-  const action = resolvedParams.slug[0]; // 'add' or 'edit'
-  const id = resolvedParams.slug[1]; // undefined if 'add'
+  const action = resolvedParams.slug[0];
+  const id = resolvedParams.slug[1];
   
-  const { products, categories, addProduct, updateProduct } = useAdmin();
+  const { products, categories, fetchData } = useAdmin();
   const router = useRouter();
   
   const isEdit = action === 'edit' && !!id;
   const existingProduct = isEdit ? products.find(p => p.id === id) : null;
 
   const [formData, setFormData] = useState({
-    name: "", slug: "", categoryId: "", price: "", description: "", shopee_url: "", is_active: true
+    name: "", slug: "", category: "", price: "", description: "", shopee_url: "", is_active: true
   });
 
   useEffect(() => {
@@ -30,37 +30,41 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
       setFormData({
         name: existingProduct.name,
         slug: existingProduct.slug,
-        categoryId: existingProduct.categoryId,
+        category: existingProduct.category,
         price: existingProduct.price.toString(),
         description: existingProduct.description,
         shopee_url: existingProduct.shopee_url || "",
         is_active: existingProduct.is_active
       });
-    } else if (categories.length > 0 && !formData.categoryId) {
-      setFormData(prev => ({ ...prev, categoryId: categories[0].id }));
+    } else if (categories.length > 0 && !formData.category) {
+      setFormData(prev => ({ ...prev, category: categories[0].id }));
     }
   }, [existingProduct, categories]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const productPayload = {
-      id: isEdit ? id : `p${Date.now()}`,
-      name: formData.name,
-      slug: formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      categoryId: formData.categoryId,
-      price: parseInt(formData.price) || 0,
-      description: formData.description,
-      images: ["/placeholder.jpg"], // Mock
-      shopee_url: formData.shopee_url,
-      is_active: formData.is_active
-    };
+    
+    const formDataObj = new FormData();
+    formDataObj.append('name', formData.name);
+    formDataObj.append('slug', formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+    formDataObj.append('category', formData.category);
+    formDataObj.append('price', formData.price);
+    formDataObj.append('description', formData.description);
+    formDataObj.append('shopee_url', formData.shopee_url);
+    formDataObj.append('is_active', formData.is_active ? 'true' : 'false');
 
-    if (isEdit) {
-      updateProduct(productPayload);
-    } else {
-      addProduct(productPayload);
+    try {
+      if (isEdit) {
+        await pb.collection('products').update(id, formDataObj);
+      } else {
+        await pb.collection('products').create(formDataObj);
+      }
+      fetchData();
+      router.push("/admin/produk");
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menyimpan produk.");
     }
-    router.push("/admin/produk");
   };
 
   const inputClass = "w-full bg-[#2A0206] border border-[#D4AF37]/30 rounded-md px-4 py-3 text-[#FDFBF7] focus:outline-none focus:border-[#D4AF37] transition-colors";
@@ -89,7 +93,7 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm text-[#F5F2EB]">Kategori *</label>
-            <select required value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})} className={inputClass}>
+            <select required value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className={inputClass}>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>

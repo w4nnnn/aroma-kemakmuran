@@ -1,17 +1,19 @@
 "use client";
 
 import { useAdmin } from "@/lib/admin-context";
+import { pb } from "@/lib/pocketbase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Plus, Edit, Trash2 } from "lucide-react";
 
 export default function AdminProductPage() {
-  const { products, categories, deleteProduct } = useAdmin();
+  const { products, categories, fetchData } = useAdmin();
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
-      deleteProduct(id);
+      await pb.collection('products').delete(id);
+      fetchData();
     }
   };
 

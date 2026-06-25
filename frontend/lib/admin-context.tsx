@@ -1,44 +1,64 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
-import { Product, Category } from "./types";
-import { mockProducts, mockCategories } from "./mock-data";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { pb } from "./pocketbase";
 
 interface AdminContextType {
-  products: Product[];
-  categories: Category[];
-  addProduct: (p: Product) => void;
-  updateProduct: (p: Product) => void;
-  deleteProduct: (id: string) => void;
-  addCategory: (c: Category) => void;
-  updateCategory: (c: Category) => void;
-  deleteCategory: (id: string) => void;
+  products: any[];
+  categories: any[];
+  fetchData: () => Promise<void>;
   isAuthenticated: boolean;
-  login: () => void;
+  login: (email: string, pass: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export function AdminProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Mock auth
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const addProduct = (p: Product) => setProducts([...products, p]);
-  const updateProduct = (p: Product) => setProducts(products.map(item => item.id === p.id ? p : item));
-  const deleteProduct = (id: string) => setProducts(products.filter(p => p.id !== id));
+  useEffect(() => {
+    setIsAuthenticated(pb.authStore.isValid);
+    if (pb.authStore.isValid) fetchData();
 
-  const addCategory = (c: Category) => setCategories([...categories, c]);
-  const updateCategory = (c: Category) => setCategories(categories.map(item => item.id === c.id ? c : item));
-  const deleteCategory = (id: string) => setCategories(categories.filter(c => c.id !== id));
+    const unsub = pb.authStore.onChange((token, model) => {
+      setIsAuthenticated(!!token);
+      if (token) fetchData();
+      else { setProducts([]); setCategories([]); }
+    });
+    return () => unsub();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [cats, prods] = await Promise.all([
+        pb.collection('categories').getFullList({ sort: 'name' }),
+        pb.collection('products').getFullList({ sort: '-created' })
+      ]);
+      setCategories(cats);
+      setProducts(prods);
+    } catch (error) {
+      console.error("Failed to fetch admin data", error);
+    }
+  };
+
+  const login = async (email: string, pass: string) => {
+    try {
+      await pb.admins.authWithPassword(email, pass);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const logout = () => {
+    pb.authStore.clear();
+  };
 
   return (
-    <AdminContext.Provider value={{
-      products, categories, addProduct, updateProduct, deleteProduct,
-      addCategory, updateCategory, deleteCategory,
-      isAuthenticated, login: () => setIsAuthenticated(true), logout: () => setIsAuthenticated(false)
-    }}>
+    <AdminContext.Provider value={{ products, categories, fetchData, isAuthenticated, login, logout }}>
       {children}
     </AdminContext.Provider>
   );
