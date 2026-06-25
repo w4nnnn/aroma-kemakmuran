@@ -23,3 +23,4 @@ build/
 
 # Keep docs & specs
 !docs/
+.env
