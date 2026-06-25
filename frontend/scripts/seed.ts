@@ -91,9 +91,9 @@ async function main() {
   try {
     await pb.admins.authWithPassword(email, password);
     console.log('[Seed] Authenticated as admin successfully.');
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Seed] Failed to authenticate as admin. Please ensure PocketBase is running and credentials are correct.');
-    console.error('Use the PocketBase Admin UI to create the first admin user matching these credentials.');
+    console.error('Error Details:', error.message, error.originalError);
     process.exit(1);
   }
 
