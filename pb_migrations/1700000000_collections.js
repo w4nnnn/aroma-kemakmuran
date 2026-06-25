@@ -40,12 +40,11 @@ migrate((db) => {
     "deleteRule": null,
   });
 
-  db.saveCollection(collection1);
-  db.saveCollection(collection2);
+  $app.dao().saveCollection(collection1);
+  $app.dao().saveCollection(collection2);
 }, (db) => {
-  const dao = new Dao(db);
-  const products = dao.findCollectionByNameOrId("products0000000");
-  const categories = dao.findCollectionByNameOrId("categories00000");
-  dao.deleteCollection(products);
-  dao.deleteCollection(categories);
+  const products = $app.dao().findCollectionByNameOrId("products0000000");
+  const categories = $app.dao().findCollectionByNameOrId("categories00000");
+  $app.dao().deleteCollection(products);
+  $app.dao().deleteCollection(categories);
 });
