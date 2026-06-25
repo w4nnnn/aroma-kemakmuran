@@ -24,3 +24,4 @@ build/
 # Keep docs & specs
 !docs/
 .env
+pb_data/
