@@ -17,7 +17,8 @@ async function handleProxy(
   // Construct the target URL
   const targetPath = path.join("/");
   const url = new URL(request.url);
-  const targetUrl = new URL(`/api/${targetPath}${url.search}`, pbUrl);
+  const cleanPath = targetPath.startsWith('api/') ? targetPath : `api/${targetPath}`;
+  const targetUrl = new URL(`/${cleanPath}${url.search}`, pbUrl);
 
   // Forward headers (especially auth and content-type)
   const headers = new Headers();
