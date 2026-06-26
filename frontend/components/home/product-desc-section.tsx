@@ -2,6 +2,7 @@
 import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import Image from "next/image";
 
 export function ProductDescSection() {
   const container = useRef<HTMLElement>(null);
@@ -19,10 +20,14 @@ export function ProductDescSection() {
   return (
     <section ref={container} className="py-24 px-4 bg-maroon-elevated">
       <div className="container mx-auto grid md:grid-cols-2 gap-16 items-center">
-        <div className="relative aspect-video md:aspect-square rounded-xl overflow-hidden bg-[#2A0206] border border-gold-primary/20 desc-anim order-2 md:order-1">
-           <div className="absolute inset-0 flex items-center justify-center text-gold-primary/50">
-             [Gambar Kemasan Fisik 30 Stick]
-           </div>
+        <div className="relative aspect-video md:aspect-square rounded-xl overflow-hidden bg-[#2A0206] border border-gold-primary/20 desc-anim order-2 md:order-1 shadow-2xl shadow-black/40">
+          <Image
+            src="/generate-image(1).jpg"
+            alt="Kemasan premium dan 30 batang dupa herbal Aroma Kemakmuran"
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover object-center"
+          />
         </div>
         
         <div className="space-y-6 order-1 md:order-2">
