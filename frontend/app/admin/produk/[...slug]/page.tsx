@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ProductFormPage({ params }: { params: Promise<{ slug: string[] }> }) {
   const resolvedParams = use(params);
@@ -93,9 +100,18 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm text-[#F5F2EB]">Kategori *</label>
-            <select required value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className={inputClass}>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <Select required value={formData.category} onValueChange={value => setFormData({...formData, category: value})}>
+              <SelectTrigger className="w-full bg-[#2A0206] border-[#D4AF37]/30 text-[#FDFBF7] h-[46px] rounded-md px-4 focus:ring-1 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37]">
+                <SelectValue placeholder="Pilih Kategori" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A040A] border-[#D4AF37]/30 text-[#FDFBF7]">
+                {categories.map(c => (
+                  <SelectItem key={c.id} value={c.id} className="focus:bg-[#D4AF37]/10 focus:text-[#D4AF37] cursor-pointer">
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <label className="text-sm text-[#F5F2EB]">Link Shopee (Opsional)</label>
