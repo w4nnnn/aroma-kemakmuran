@@ -1,7 +1,17 @@
 import Link from "next/link";
 import { Instagram, Facebook, MessageCircle } from "lucide-react";
+import { pb } from "@/lib/pocketbase";
+import { AnimatedLink } from "@/components/ui/animated-link";
 
-export function Footer() {
+export async function Footer() {
+  let categories: any[] = [];
+  
+  try {
+    categories = await pb.collection('categories').getFullList({ sort: 'name' });
+  } catch (error) {
+    console.error("Failed to load categories for footer:", error);
+  }
+
   return (
     <footer className="bg-[#1A0103] border-t border-gold-primary/10 pt-16 pb-8 px-4 mt-auto">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
@@ -14,10 +24,29 @@ export function Footer() {
         
         <div>
           <h4 className="font-medium text-text-primary mb-4">Navigasi</h4>
-          <ul className="space-y-2">
-            <li><Link href="/" className="text-sm text-text-muted hover:text-gold-primary transition-colors">Beranda</Link></li>
-            <li><Link href="/kategori/dupa" className="text-sm text-text-muted hover:text-gold-primary transition-colors">Dupa</Link></li>
-            <li><Link href="/kategori/garam-ruqyah" className="text-sm text-text-muted hover:text-gold-primary transition-colors">Garam Ruqyah</Link></li>
+          <ul className="space-y-3">
+            <li>
+              <AnimatedLink 
+                href="/" 
+                variant="left" 
+                showArrow={false} 
+                className="text-sm text-[#F5F2EB] hover:text-[#D4AF37] transition-colors"
+              >
+                Beranda
+              </AnimatedLink>
+            </li>
+            {categories.map((cat) => (
+              <li key={cat.id}>
+                <AnimatedLink 
+                  href={`/kategori/${cat.slug}`} 
+                  variant="left" 
+                  showArrow={false}
+                  className="text-sm text-[#F5F2EB] hover:text-[#D4AF37] transition-colors"
+                >
+                  {cat.name}
+                </AnimatedLink>
+              </li>
+            ))}
           </ul>
         </div>
 
