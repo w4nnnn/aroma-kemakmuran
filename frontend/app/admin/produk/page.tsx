@@ -51,7 +51,7 @@ export default function AdminProductPage() {
                 products.map((product) => (
                   <tr key={product.id} className="hover:bg-[#2A0206]/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-[#FDFBF7]">{product.name}</td>
-                    <td className="px-6 py-4 text-[#F5F2EB]">{getCategoryName(product.categoryId)}</td>
+                    <td className="px-6 py-4 text-[#F5F2EB]">{getCategoryName(product.category)}</td>
                     <td className="px-6 py-4 text-[#F5F2EB]">Rp {product.price.toLocaleString('id-ID')}</td>
                     <td className="px-6 py-4">
                       {product.is_active ? (
