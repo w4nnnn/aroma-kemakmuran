@@ -10,13 +10,13 @@ services:
     build:
       context: ./frontend
     ports:
-      - "${FRONTEND_PORT:-2200}:3000"
+      - "2200:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
     environment:
-      - NEXT_PUBLIC_PB_URL=http://localhost:3000
+      - NEXT_PUBLIC_PB_URL=${NEXT_PUBLIC_PB_URL:-http://localhost:2200}
       - INTERNAL_PB_URL=${INTERNAL_PB_URL:-http://pocketbase:8090}
     depends_on:
       - pocketbase
