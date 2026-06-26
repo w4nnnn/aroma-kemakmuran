@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { pb } from "./pocketbase";
+import { useRouter } from "next/navigation";
 
 interface AdminContextType {
   products: any[];
@@ -9,7 +10,7 @@ interface AdminContextType {
   fetchData: () => Promise<void>;
   isAuthenticated: boolean;
   login: (email: string, pass: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -17,18 +18,15 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Assume true initially if on an admin route protected by middleware
+  const [isAuthenticated, setIsAuthenticated] = useState(true); 
+  const router = useRouter();
 
   useEffect(() => {
-    setIsAuthenticated(pb.authStore.isValid);
-    if (pb.authStore.isValid) fetchData();
-
-    const unsub = pb.authStore.onChange((token, model) => {
-      setIsAuthenticated(!!token);
-      if (token) fetchData();
-      else { setProducts([]); setCategories([]); }
-    });
-    return () => unsub();
+    // Only attempt fetch if we think we're authenticated
+    // Note: since pbUrl is now /api/pb, authStore in JS SDK is effectively useless
+    // The browser automatically sends the HTTP-Only cookie.
+    fetchData();
   }, []);
 
   const fetchData = async () => {
@@ -39,22 +37,34 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       ]);
       setCategories(cats);
       setProducts(prods);
+      setIsAuthenticated(true);
     } catch (error) {
       console.error("Failed to fetch admin data", error);
+      // If fetching fails with 401, proxy cookie is invalid/expired
+      setIsAuthenticated(false);
     }
   };
 
   const login = async (email: string, pass: string) => {
     try {
-      await pb.admins.authWithPassword(email, pass);
+      // This goes to proxy, which intercepts auth-with-password and sets the cookie
+      await pb.collection('_superusers').authWithPassword(email, pass);
+      setIsAuthenticated(true);
+      fetchData();
       return true;
     } catch (e) {
       return false;
     }
   };
 
-  const logout = () => {
-    pb.authStore.clear();
+  const logout = async () => {
+    // We need an endpoint to clear the cookie, or we can just fetch an invalid endpoint or clear it via JS if not http-only.
+    // Since it's HTTP-only, we must tell the server to delete it. Let's do it by fetching a custom logout route.
+    await fetch('/api/pb/logout', { method: 'POST' });
+    setIsAuthenticated(false);
+    setProducts([]);
+    setCategories([]);
+    router.push('/admin/login');
   };
 
   return (

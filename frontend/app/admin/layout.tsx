@@ -1,31 +1,19 @@
 "use client";
 
-import { AdminProvider, useAdmin } from "@/lib/admin-context";
+import { AdminProvider } from "@/lib/admin-context";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminTopbar } from "@/components/admin/topbar";
-import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated } = useAdmin();
   const pathname = usePathname();
-  const router = useRouter();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated && pathname !== "/admin/login") {
-      router.push("/admin/login");
-    }
-  }, [isAuthenticated, pathname, router]);
-
-  if (!isAuthenticated && pathname === "/admin/login") {
+  if (pathname === "/admin/login") {
     return <>{children}</>;
   }
 
-  if (!isAuthenticated) return null; // Prevent flash
-
-  // Determine title based on pathname
   let title = "Dashboard";
   if (pathname.includes("/produk")) title = "Manajemen Produk";
   if (pathname.includes("/kategori")) title = "Manajemen Kategori";
@@ -50,4 +38,3 @@ export default function AdminRootLayout({ children }: { children: React.ReactNod
     </AdminProvider>
   );
 }
-
