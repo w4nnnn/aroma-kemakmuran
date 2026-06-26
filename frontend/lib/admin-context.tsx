@@ -48,7 +48,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, pass: string) => {
     try {
       // This goes to proxy, which intercepts auth-with-password and sets the cookie
-      await pb.collection('_superusers').authWithPassword(email, pass);
+      await pb.admins.authWithPassword(email, pass);
       setIsAuthenticated(true);
       fetchData();
       return true;
