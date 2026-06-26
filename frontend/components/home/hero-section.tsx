@@ -2,6 +2,7 @@
 import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import Image from "next/image";
 
 export function HeroSection() {
   const container = useRef<HTMLElement>(null);
@@ -33,11 +34,16 @@ export function HeroSection() {
           </p>
         </div>
         
-        {/* Placeholder for Hero Image */}
-        <div className="relative aspect-square md:aspect-[4/5] rounded-xl overflow-hidden bg-maroon-elevated border border-gold-primary/20 hero-anim">
-           <div className="absolute inset-0 flex items-center justify-center text-gold-primary/50">
-             [Gambar Produk Premium]
-           </div>
+        {/* Hero Image */}
+        <div className="relative w-full mx-auto max-w-md md:max-w-none aspect-square md:aspect-[4/3] rounded-xl overflow-hidden bg-maroon-elevated border border-gold-primary/20 hero-anim shadow-2xl shadow-black/50">
+          <Image
+            src="/generate-image.jpg"
+            alt="Dupa herbal premium Aroma Kemakmuran yang menyala dengan asap yang menenangkan"
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover object-center"
+          />
         </div>
       </div>
     </section>
