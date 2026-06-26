@@ -1,7 +1,8 @@
-import { pb, getPbImageUrl } from "@/lib/pocketbase";
+import { pb } from "@/lib/pocketbase";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, MessageCircle } from "lucide-react";
+import { ProductGallery } from "@/components/public/product-gallery";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
@@ -13,13 +14,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     return (
       <div className="container mx-auto px-4 py-12 md:py-20">
         <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
-          <div className="aspect-square bg-maroon-elevated rounded-2xl border border-gold-primary/20 relative overflow-hidden flex items-center justify-center">
-            {product.image ? (
-               <img src={getPbImageUrl(product.collectionId, product.id, product.image)} alt={product.name} className="object-cover w-full h-full" />
-            ) : (
-               <span className="text-gold-primary/30 text-lg">Galeri Foto Produk</span>
-            )}
-          </div>
+          <ProductGallery 
+            recordId={product.id} 
+            collectionId={product.collectionId} 
+            images={product.image} 
+            videos={product.video} 
+          />
           
           <div className="flex flex-col">
             <h1 className="font-serif text-4xl md:text-5xl text-text-primary mb-4 leading-tight">

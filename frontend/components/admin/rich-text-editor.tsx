@@ -13,7 +13,7 @@ import {
   AlignLeft, AlignCenter, AlignRight,
   Undo, Redo
 } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 
 export function RichTextEditor({ content, onChange }: { content: string, onChange: (html: string) => void }) {
   const editor = useEditor({
@@ -43,6 +43,12 @@ export function RichTextEditor({ content, onChange }: { content: string, onChang
       onChange(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
 
   const setLink = useCallback(() => {
     if (!editor) return;

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -31,8 +31,20 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
   const [formData, setFormData] = useState({
     name: "", slug: "", category: "", price: "", description: "", shopee_url: "", is_active: true
   });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
+  const [previewImages, setPreviewImages] = useState<{ url: string, isExisting: boolean, name: string }[]>([]);
+  const [previewVideos, setPreviewVideos] = useState<{ url: string, isExisting: boolean, name: string }[]>([]);
+  const [removeMedia, setRemoveMedia] = useState<{ images: string[], videos: string[] }>({ images: [], videos: [] });
+
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    if (isInitialized) return;
+
+    if (isEdit && products.length === 0) return;
+    if (!isEdit && categories.length === 0) return;
+
     if (existingProduct) {
       setFormData({
         name: existingProduct.name,
@@ -43,10 +55,21 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
         shopee_url: existingProduct.shopee_url || "",
         is_active: existingProduct.is_active
       });
-    } else if (categories.length > 0 && !formData.category) {
+      
+      if (existingProduct.image) {
+        const images = Array.isArray(existingProduct.image) ? existingProduct.image : [existingProduct.image];
+        setPreviewImages(images.map(img => ({ url: pb.files.getUrl(existingProduct, img), isExisting: true, name: img })));
+      }
+      if (existingProduct.video) {
+        const videos = Array.isArray(existingProduct.video) ? existingProduct.video : [existingProduct.video];
+        setPreviewVideos(videos.map(vid => ({ url: pb.files.getUrl(existingProduct, vid), isExisting: true, name: vid })));
+      }
+      setIsInitialized(true);
+    } else if (!isEdit && categories.length > 0) {
       setFormData(prev => ({ ...prev, category: categories[0].id }));
+      setIsInitialized(true);
     }
-  }, [existingProduct, categories]);
+  }, [existingProduct, categories, isEdit, isInitialized, products.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,8 +83,22 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
     formDataObj.append('shopee_url', formData.shopee_url);
     formDataObj.append('is_active', formData.is_active ? 'true' : 'false');
 
+    if (imageFiles.length > 0) {
+      imageFiles.forEach(file => formDataObj.append('image', file));
+    }
+
+    if (videoFiles.length > 0) {
+      videoFiles.forEach(file => formDataObj.append('video', file));
+    }
+
     try {
       if (isEdit) {
+        if (removeMedia.images.length > 0) {
+           await pb.collection('products').update(id, { "image-": removeMedia.images });
+        }
+        if (removeMedia.videos.length > 0) {
+           await pb.collection('products').update(id, { "video-": removeMedia.videos });
+        }
         await pb.collection('products').update(id, formDataObj);
       } else {
         await pb.collection('products').create(formDataObj);
@@ -116,6 +153,90 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
           <div className="space-y-2">
             <label className="text-sm text-[#F5F2EB]">Link Shopee (Opsional)</label>
             <input type="url" value={formData.shopee_url} onChange={e => setFormData({...formData, shopee_url: e.target.value})} placeholder="https://shopee.co.id/..." className={inputClass} />
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-sm text-[#F5F2EB]">Foto Produk</label>
+            <div className="border-2 border-dashed border-[#D4AF37]/30 rounded-lg p-4 flex flex-col gap-4 bg-[#2A0206] min-h-[160px]">
+              
+              <div className="grid grid-cols-2 gap-4">
+                {previewImages.map((img, idx) => (
+                  <div key={idx} className="relative aspect-square rounded-md overflow-hidden group">
+                    <img src={img.url} alt="Preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" onClick={() => { 
+                        setPreviewImages(prev => prev.filter((_, i) => i !== idx));
+                        if (img.isExisting) {
+                          setRemoveMedia(p => ({ ...p, images: [...p.images, img.name] }));
+                        } else {
+                          setImageFiles(prev => prev.filter(f => f.name !== img.name));
+                        }
+                      }} className="bg-red-500/80 text-white p-2 rounded-full hover:bg-red-500">
+                        <X size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <label className="border-2 border-dashed border-[#D4AF37]/50 rounded-md flex flex-col items-center justify-center gap-2 aspect-square cursor-pointer hover:bg-[#D4AF37]/5 transition-colors">
+                  <ImageIcon className="text-[#D4AF37]/50" size={24} />
+                  <span className="text-[10px] text-[#F5F2EB]/60 text-center px-2">Tambah Gambar</span>
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setImageFiles(prev => [...prev, ...files]);
+                    setPreviewImages(prev => [
+                      ...prev, 
+                      ...files.map(file => ({ url: URL.createObjectURL(file), isExisting: false, name: file.name }))
+                    ]);
+                  }} />
+                </label>
+              </div>
+
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm text-[#F5F2EB]">Video Produk (Opsional)</label>
+            <div className="border-2 border-dashed border-[#D4AF37]/30 rounded-lg p-4 flex flex-col gap-4 bg-[#2A0206] min-h-[160px]">
+              
+              <div className="flex flex-col gap-4">
+                {previewVideos.map((vid, idx) => (
+                  <div key={idx} className="relative aspect-video rounded-md overflow-hidden group">
+                    <video src={vid.url} className="w-full h-full object-cover bg-black" controls />
+                    <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" onClick={() => { 
+                        setPreviewVideos(prev => prev.filter((_, i) => i !== idx));
+                        if (vid.isExisting) {
+                          setRemoveMedia(p => ({ ...p, videos: [...p.videos, vid.name] }));
+                        } else {
+                          setVideoFiles(prev => prev.filter(f => f.name !== vid.name));
+                        }
+                      }} className="bg-red-500/80 text-white p-1.5 rounded-full hover:bg-red-500 shadow-md">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <label className="border-2 border-dashed border-[#D4AF37]/50 rounded-md py-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-[#D4AF37]/5 transition-colors">
+                  <div className="w-8 h-8 rounded-full border border-[#D4AF37]/50 flex items-center justify-center">
+                    <div className="w-0 h-0 border-t-4 border-b-4 border-l-[6px] border-transparent border-l-[#D4AF37]/50 ml-1" />
+                  </div>
+                  <span className="text-xs text-[#F5F2EB]/60">Tambah Video</span>
+                  <input type="file" accept="video/mp4,video/webm" multiple className="hidden" onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setVideoFiles(prev => [...prev, ...files]);
+                    setPreviewVideos(prev => [
+                      ...prev, 
+                      ...files.map(file => ({ url: URL.createObjectURL(file), isExisting: false, name: file.name }))
+                    ]);
+                  }} />
+                </label>
+              </div>
+
+            </div>
           </div>
         </div>
 
