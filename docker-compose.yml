@@ -2,8 +2,6 @@ services:
   pocketbase:
     build: 
       context: ./pocketbase
-    ports:
-      - "${PB_PORT:-8090}:8090"
     volumes:
       - ./pb_data:/pb/pb_data
       - ./pb_migrations:/pb/pb_migrations
@@ -18,7 +16,7 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      - NEXT_PUBLIC_PB_URL=${NEXT_PUBLIC_PB_URL:-http://127.0.0.1:8090}
+      - NEXT_PUBLIC_PB_URL=http://localhost:3000
       - INTERNAL_PB_URL=${INTERNAL_PB_URL:-http://pocketbase:8090}
     depends_on:
       - pocketbase
