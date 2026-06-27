@@ -17,9 +17,12 @@ import { useCallback, useEffect } from 'react';
 
 export function RichTextEditor({ content, onChange }: { content: string, onChange: (html: string) => void }) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
-        heading: { levels: [1, 2, 3] }
+        heading: { levels: [1, 2, 3] },
+        link: false,
+        underline: false,
       }),
       Placeholder.configure({ placeholder: 'Deskripsi produk atau konten artikel...' }),
       Underline,
