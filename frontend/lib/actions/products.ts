@@ -32,12 +32,17 @@ export async function createProduct(data: {
   image?: string[];
   video?: string[];
 }) {
+  // Validate required fields
+  if (!data.name || !data.slug || !data.categoryId) {
+    throw new Error('Nama, slug, dan kategori wajib diisi');
+  }
+
   // Map to snake_case column names via schema
   const result = await db.insert(products).values({
     name: data.name,
     slug: data.slug,
     categoryId: data.categoryId,
-    price: data.price,
+    price: data.price || '0',
     description: data.description || null,
     shopeeUrl: data.shopeeUrl || null,
     isActive: data.isActive ?? true,

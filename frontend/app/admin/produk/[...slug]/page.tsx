@@ -106,14 +106,21 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
         video: currentVideos
       };
 
-      if (isEdit) await updateProduct(id, payload);
-      else await createProduct(payload);
+      console.log('Submitting payload:', payload);
+
+      if (isEdit) {
+        const result = await updateProduct(id, payload);
+        console.log('Update result:', result);
+      } else {
+        const result = await createProduct(payload);
+        console.log('Create result:', result);
+      }
 
       fetchData();
       router.push("/admin/produk");
     } catch (err) {
-      console.error(err);
-      alert("Gagal menyimpan produk. Silakan coba lagi.");
+      console.error("Error saving product:", err);
+      alert(`Gagal menyimpan produk: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
