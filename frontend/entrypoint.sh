@@ -5,6 +5,11 @@ if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
   npm ci
 fi
 
+sleep 5
+
+echo "Running seed script..."
+npm run seed || echo "Seed script returned an error."
+
 if [ "$NODE_ENV" = "production" ]; then
   echo "Starting in PRODUCTION mode..."
   # Only build if .next doesn't exist or is empty to speed up restarts
