@@ -1,8 +1,16 @@
 import 'dotenv/config';
-import PocketBase from 'pocketbase';
+import { createClient } from '@supabase/supabase-js';
 
-const pbUrl = process.env.NEXT_PUBLIC_PB_URL || 'http://127.0.0.1:8090';
-const pb = new PocketBase(pbUrl);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+// We need the service role key to bypass RLS for seeding, or just rely on RLS if anon key is enough
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('[Seed] Missing Supabase URL or Key in environment variables.');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function seedCategories() {
   const categories = [
@@ -17,7 +25,12 @@ async function seedCategories() {
   for (const cat of categories) {
     try {
       // Check if exists
-      const existing = await pb.collection('categories').getFirstListItem(`slug="${cat.slug}"`).catch(() => null);
+      const { data: existing, error: fetchError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', cat.slug)
+        .single();
+
       if (existing) {
         console.log(`[Seed] Category '${cat.name}' already exists.`);
         createdCategories[cat.slug] = existing.id;
@@ -25,9 +38,18 @@ async function seedCategories() {
       }
 
       // Create
-      const record = await pb.collection('categories').create(cat);
-      console.log(`[Seed] Created category '${cat.name}'.`);
-      createdCategories[cat.slug] = record.id;
+      const { data: record, error: createError } = await supabase
+        .from('categories')
+        .insert(cat)
+        .select('id')
+        .single();
+
+      if (createError) throw createError;
+
+      if (record) {
+        console.log(`[Seed] Created category '${cat.name}'.`);
+        createdCategories[cat.slug] = record.id;
+      }
     } catch (error: any) {
       console.error(`[Seed] Failed to seed category '${cat.name}':`, error.message);
     }
@@ -41,7 +63,7 @@ async function seedProducts(categoryIds: Record<string, string>) {
     {
       name: "Dupa Aroma Kemakmuran",
       slug: "dupa-aroma-kemakmuran",
-      category: categoryIds["dupa"],
+      category_id: categoryIds["dupa"],
       price: 150000,
       description: "<p>Dupa herbal premium isi 30 stick.</p>",
       shopee_url: "https://shopee.co.id/example",
@@ -50,7 +72,7 @@ async function seedProducts(categoryIds: Record<string, string>) {
     {
       name: "Ruwatan Reguler Komplit",
       slug: "ruwatan-reguler-komplit",
-      category: categoryIds["ruwatan-uborampe"],
+      category_id: categoryIds["ruwatan-uborampe"],
       price: 500000,
       description: "<p>Paket ruwatan pembersihan diri.</p>",
       shopee_url: "",
@@ -60,21 +82,31 @@ async function seedProducts(categoryIds: Record<string, string>) {
 
   console.log('[Seed] Seeding products...');
   for (const prod of products) {
-    if (!prod.category) {
+    if (!prod.category_id) {
       console.warn(`[Seed] Skipping product '${prod.name}' because its category is missing.`);
       continue;
     }
 
     try {
       // Check if exists
-      const existing = await pb.collection('products').getFirstListItem(`slug="${prod.slug}"`).catch(() => null);
+      const { data: existing } = await supabase
+        .from('products')
+        .select('id')
+        .eq('slug', prod.slug)
+        .single();
+
       if (existing) {
         console.log(`[Seed] Product '${prod.name}' already exists.`);
         continue;
       }
 
       // Create
-      await pb.collection('products').create(prod);
+      const { error: createError } = await supabase
+        .from('products')
+        .insert(prod);
+
+      if (createError) throw createError;
+      
       console.log(`[Seed] Created product '${prod.name}'.`);
     } catch (error: any) {
       console.error(`[Seed] Failed to seed product '${prod.name}':`, error.message);
@@ -83,20 +115,11 @@ async function seedProducts(categoryIds: Record<string, string>) {
 }
 
 async function main() {
-  console.log(`[Seed] Connecting to PocketBase at ${pbUrl}...`);
+  console.log(`[Seed] Connecting to Supabase at ${supabaseUrl}...`);
   
-  const email = process.env.PB_ADMIN_EMAIL || 'admin@example.com';
-  const password = process.env.PB_ADMIN_PASSWORD || 'password123';
-
-  try {
-    await pb.admins.authWithPassword(email, password);
-    console.log('[Seed] Authenticated as admin successfully.');
-  } catch (error: any) {
-    console.error('[Seed] Failed to authenticate as admin. Please ensure PocketBase is running and credentials are correct.');
-    console.error('Error Details:', error.message, error.originalError);
-    process.exit(1);
-  }
-
+  // Note: if you only have anon key, you might need to authenticate first depending on RLS.
+  // If RLS allows public inserts, or if you use service_role_key, auth isn't strictly necessary.
+  
   const categoryIds = await seedCategories();
   await seedProducts(categoryIds);
 

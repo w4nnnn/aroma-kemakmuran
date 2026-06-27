@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { useAdmin } from "@/lib/admin-context";
-import { pb } from "@/lib/pocketbase";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
@@ -24,18 +24,20 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
   
   const { products, categories, fetchData } = useAdmin();
   const router = useRouter();
+  const supabase = createClient();
   
   const isEdit = action === 'edit' && !!id;
   const existingProduct = isEdit ? products.find(p => p.id === id) : null;
 
   const [formData, setFormData] = useState({
-    name: "", slug: "", category: "", price: "", description: "", shopee_url: "", is_active: true
+    name: "", slug: "", category_id: "", price: "", description: "", shopee_url: "", is_active: true
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<{ url: string, isExisting: boolean, name: string }[]>([]);
   const [previewVideos, setPreviewVideos] = useState<{ url: string, isExisting: boolean, name: string }[]>([]);
   const [removeMedia, setRemoveMedia] = useState<{ images: string[], videos: string[] }>({ images: [], videos: [] });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -49,65 +51,109 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
       setFormData({
         name: existingProduct.name,
         slug: existingProduct.slug,
-        category: existingProduct.category,
+        category_id: existingProduct.category_id,
         price: existingProduct.price.toString(),
-        description: existingProduct.description,
+        description: existingProduct.description || "",
         shopee_url: existingProduct.shopee_url || "",
         is_active: existingProduct.is_active
       });
       
-      if (existingProduct.image) {
-        const images = Array.isArray(existingProduct.image) ? existingProduct.image : [existingProduct.image];
-        setPreviewImages(images.map(img => ({ url: pb.files.getUrl(existingProduct, img), isExisting: true, name: img })));
+      const SUPABASE_STORAGE_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-media/`;
+      
+      if (existingProduct.image && existingProduct.image.length > 0) {
+        setPreviewImages(existingProduct.image.map((img: string) => ({ 
+          url: `${SUPABASE_STORAGE_URL}${img}`, 
+          isExisting: true, 
+          name: img 
+        })));
       }
-      if (existingProduct.video) {
-        const videos = Array.isArray(existingProduct.video) ? existingProduct.video : [existingProduct.video];
-        setPreviewVideos(videos.map(vid => ({ url: pb.files.getUrl(existingProduct, vid), isExisting: true, name: vid })));
+      if (existingProduct.video && existingProduct.video.length > 0) {
+        setPreviewVideos(existingProduct.video.map((vid: string) => ({ 
+          url: `${SUPABASE_STORAGE_URL}${vid}`, 
+          isExisting: true, 
+          name: vid 
+        })));
       }
       setIsInitialized(true);
     } else if (!isEdit && categories.length > 0) {
-      setFormData(prev => ({ ...prev, category: categories[0].id }));
+      setFormData(prev => ({ ...prev, category_id: categories[0].id }));
       setIsInitialized(true);
     }
   }, [existingProduct, categories, isEdit, isInitialized, products.length]);
 
+  const uploadFile = async (file: File, folder: string) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    const filePath = `${folder}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-media')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      throw uploadError;
+    }
+    return filePath;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    const formDataObj = new FormData();
-    formDataObj.append('name', formData.name);
-    formDataObj.append('slug', formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
-    formDataObj.append('category', formData.category);
-    formDataObj.append('price', formData.price);
-    formDataObj.append('description', formData.description);
-    formDataObj.append('shopee_url', formData.shopee_url);
-    formDataObj.append('is_active', formData.is_active ? 'true' : 'false');
-
-    if (imageFiles.length > 0) {
-      imageFiles.forEach(file => formDataObj.append('image', file));
-    }
-
-    if (videoFiles.length > 0) {
-      videoFiles.forEach(file => formDataObj.append('video', file));
-    }
-
     try {
+      let currentImages = existingProduct?.image ? [...existingProduct.image] : [];
+      let currentVideos = existingProduct?.video ? [...existingProduct.video] : [];
+
+      // Handle removals
       if (isEdit) {
         if (removeMedia.images.length > 0) {
-           await pb.collection('products').update(id, { "image-": removeMedia.images });
+          await supabase.storage.from('product-media').remove(removeMedia.images);
+          currentImages = currentImages.filter(img => !removeMedia.images.includes(img));
         }
         if (removeMedia.videos.length > 0) {
-           await pb.collection('products').update(id, { "video-": removeMedia.videos });
+          await supabase.storage.from('product-media').remove(removeMedia.videos);
+          currentVideos = currentVideos.filter(vid => !removeMedia.videos.includes(vid));
         }
-        await pb.collection('products').update(id, formDataObj);
-      } else {
-        await pb.collection('products').create(formDataObj);
       }
+
+      // Handle new uploads
+      if (imageFiles.length > 0) {
+        const uploadPromises = imageFiles.map(file => uploadFile(file, 'images'));
+        const newImagePaths = await Promise.all(uploadPromises);
+        currentImages = [...currentImages, ...newImagePaths];
+      }
+
+      if (videoFiles.length > 0) {
+        const uploadPromises = videoFiles.map(file => uploadFile(file, 'videos'));
+        const newVideoPaths = await Promise.all(uploadPromises);
+        currentVideos = [...currentVideos, ...newVideoPaths];
+      }
+
+      const payload = {
+        name: formData.name,
+        slug: formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        category_id: formData.category_id,
+        price: Number(formData.price),
+        description: formData.description,
+        shopee_url: formData.shopee_url,
+        is_active: formData.is_active,
+        image: currentImages,
+        video: currentVideos
+      };
+
+      if (isEdit) {
+        await supabase.from('products').update(payload).eq('id', id);
+      } else {
+        await supabase.from('products').insert(payload);
+      }
+      
       fetchData();
       router.push("/admin/produk");
     } catch (err) {
       console.error(err);
-      alert("Gagal menyimpan produk.");
+      alert("Gagal menyimpan produk. Silakan coba lagi.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -137,7 +183,7 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm text-[#F5F2EB]">Kategori *</label>
-            <Select required value={formData.category} onValueChange={value => setFormData({...formData, category: value})}>
+            <Select required value={formData.category_id} onValueChange={value => setFormData({...formData, category_id: value})}>
               <SelectTrigger className="w-full bg-[#2A0206] border-[#D4AF37]/30 text-[#FDFBF7] h-[46px] rounded-md px-4 focus:ring-1 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37]">
                 <SelectValue placeholder="Pilih Kategori" />
               </SelectTrigger>
@@ -251,8 +297,10 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
         </div>
 
         <div className="pt-6 border-t border-[#D4AF37]/20 flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.push("/admin/produk")}>Batal</Button>
-          <Button type="submit">Simpan Produk</Button>
+          <Button type="button" variant="outline" onClick={() => router.push("/admin/produk")} disabled={isSubmitting}>Batal</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Menyimpan..." : "Simpan Produk"}
+          </Button>
         </div>
       </form>
     </div>

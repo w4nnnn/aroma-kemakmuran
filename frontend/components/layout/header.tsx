@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { pb } from "@/lib/pocketbase";
+import { createClient } from "@/lib/supabase/client";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -11,9 +11,18 @@ export function Header() {
   const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    pb.collection('categories').getFullList({ sort: 'name' })
-      .then(res => setCategories(res))
-      .catch(err => console.error(err));
+    const fetchCategories = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.from('categories').select('*').order('name');
+        if (error) throw error;
+        if (data) setCategories(data);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+    
+    fetchCategories();
       
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);

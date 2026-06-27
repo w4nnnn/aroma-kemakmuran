@@ -1,4 +1,4 @@
-import { pb } from "@/lib/pocketbase";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, MessageCircle } from "lucide-react";
@@ -6,17 +6,24 @@ import { ProductGallery } from "@/components/public/product-gallery";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
+  const supabase = await createClient();
   
   try {
-    const product = await pb.collection('products').getFirstListItem(`slug="${resolvedParams.slug}" && is_active=true`);
+    const { data: product, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('slug', resolvedParams.slug)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !product) throw new Error("Product not found");
+
     const isPhysicalProduct = !!product.shopee_url;
 
     return (
       <div className="container mx-auto px-4 py-12 md:py-20">
         <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
           <ProductGallery 
-            recordId={product.id} 
-            collectionId={product.collectionId} 
             images={product.image} 
             videos={product.video} 
           />
@@ -26,12 +33,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               {product.name}
             </h1>
             <div className="text-3xl text-gold-primary font-medium mb-8">
-              Rp {product.price.toLocaleString('id-ID')}
+              Rp {Number(product.price).toLocaleString('id-ID')}
             </div>
             
             <div 
               className="prose prose-invert prose-p:text-text-muted prose-a:text-gold-primary max-w-none mb-10"
-              dangerouslySetInnerHTML={{ __html: product.description }}
+              dangerouslySetInnerHTML={{ __html: product.description || '' }}
             />
             
             <div className="mt-auto pt-8 border-t border-gold-primary/20">

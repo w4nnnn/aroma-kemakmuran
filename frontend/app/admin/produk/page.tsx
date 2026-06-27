@@ -1,7 +1,7 @@
 "use client";
 
 import { useAdmin } from "@/lib/admin-context";
-import { pb } from "@/lib/pocketbase";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -9,10 +9,24 @@ import { Plus, Edit, Trash2 } from "lucide-react";
 
 export default function AdminProductPage() {
   const { products, categories, fetchData } = useAdmin();
+  const supabase = createClient();
 
   const handleDelete = async (id: string) => {
     if (confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
-      await pb.collection('products').delete(id);
+      const product = products.find(p => p.id === id);
+      
+      // Delete associated media files from storage if any exist
+      if (product) {
+        const filesToRemove: string[] = [];
+        if (product.image && product.image.length > 0) filesToRemove.push(...product.image);
+        if (product.video && product.video.length > 0) filesToRemove.push(...product.video);
+        
+        if (filesToRemove.length > 0) {
+          await supabase.storage.from('product-media').remove(filesToRemove);
+        }
+      }
+      
+      await supabase.from('products').delete().eq('id', id);
       fetchData();
     }
   };
@@ -51,8 +65,8 @@ export default function AdminProductPage() {
                 products.map((product) => (
                   <tr key={product.id} className="hover:bg-[#2A0206]/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-[#FDFBF7]">{product.name}</td>
-                    <td className="px-6 py-4 text-[#F5F2EB]">{getCategoryName(product.category)}</td>
-                    <td className="px-6 py-4 text-[#F5F2EB]">Rp {product.price.toLocaleString('id-ID')}</td>
+                    <td className="px-6 py-4 text-[#F5F2EB]">{getCategoryName(product.category_id)}</td>
+                    <td className="px-6 py-4 text-[#F5F2EB]">Rp {Number(product.price).toLocaleString('id-ID')}</td>
                     <td className="px-6 py-4">
                       {product.is_active ? (
                         <Badge variant="default">Aktif</Badge>

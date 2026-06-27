@@ -2,23 +2,22 @@
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getPbImageUrl } from "@/lib/pocketbase";
 
 interface ProductGalleryProps {
-  recordId: string;
-  collectionId: string;
   images: string | string[];
   videos: string | string[];
 }
 
-export function ProductGallery({ recordId, collectionId, images, videos }: ProductGalleryProps) {
+export function ProductGallery({ images, videos }: ProductGalleryProps) {
   // Normalize arrays
   const imageList = images ? (Array.isArray(images) ? images : [images]) : [];
   const videoList = videos ? (Array.isArray(videos) ? videos : [videos]) : [];
 
+  const SUPABASE_STORAGE_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-media/`;
+
   const media = [
-    ...imageList.map(img => ({ type: 'image', url: getPbImageUrl(collectionId, recordId, img) })),
-    ...videoList.map(vid => ({ type: 'video', url: getPbImageUrl(collectionId, recordId, vid) }))
+    ...imageList.map(img => ({ type: 'image', url: `${SUPABASE_STORAGE_URL}${img}` })),
+    ...videoList.map(vid => ({ type: 'video', url: `${SUPABASE_STORAGE_URL}${vid}` }))
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);

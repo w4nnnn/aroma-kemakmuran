@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
-import { pb } from "@/lib/pocketbase";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, X } from "lucide-react";
 
@@ -11,8 +11,10 @@ export default function AdminCategoryPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: "", slug: "" });
+  const supabase = createClient();
 
-  const getProductCount = (categoryId: string) => products.filter(p => p.category === categoryId).length;
+  // Updated to use category_id instead of category
+  const getProductCount = (categoryId: string) => products.filter(p => p.category_id === categoryId).length;
 
   const handleDelete = async (id: string) => {
     if (getProductCount(id) > 0) {
@@ -20,7 +22,7 @@ export default function AdminCategoryPage() {
       return;
     }
     if (confirm("Hapus kategori ini?")) {
-      await pb.collection('categories').delete(id);
+      await supabase.from('categories').delete().eq('id', id);
       fetchData();
     }
   };
@@ -43,8 +45,11 @@ export default function AdminCategoryPage() {
       name: formData.name,
       slug: formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
     };
-    if (editingId) await pb.collection('categories').update(editingId, payload);
-    else await pb.collection('categories').create(payload);
+    if (editingId) {
+      await supabase.from('categories').update(payload).eq('id', editingId);
+    } else {
+      await supabase.from('categories').insert(payload);
+    }
     
     fetchData();
     setShowForm(false);

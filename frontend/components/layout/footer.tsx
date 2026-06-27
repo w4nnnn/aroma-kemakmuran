@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { Instagram, Facebook, MessageCircle } from "lucide-react";
-import { pb } from "@/lib/pocketbase";
+import { createClient } from "@/lib/supabase/server";
 import { AnimatedLink } from "@/components/ui/animated-link";
 
 export async function Footer() {
   let categories: any[] = [];
   
   try {
-    categories = await pb.collection('categories').getFullList({ sort: 'name' });
+    const supabase = await createClient();
+    const { data } = await supabase.from('categories').select('*').order('name');
+    if (data) categories = data;
   } catch (error) {
     console.error("Failed to load categories for footer:", error);
   }
