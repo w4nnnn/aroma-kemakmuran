@@ -1,19 +1,17 @@
-import 'dotenv/config';
-import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+config({ path: resolve(__dirname, '../.env.local') });
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-// We need the service role key to bypass RLS for seeding, or just rely on RLS if anon key is enough
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { categories, products } from '../lib/db/schema';
+import { eq } from 'drizzle-orm';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('[Seed] Missing Supabase URL or Key in environment variables.');
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const client = postgres(process.env.DATABASE_URL!, { prepare: false });
+const db = drizzle(client);
 
 async function seedCategories() {
-  const categories = [
+  const seedData = [
     { name: "Dupa", slug: "dupa" },
     { name: "Garam Ruqyah Buka Aura", slug: "garam-ruqyah" },
     { name: "Ruwatan Uborampe", slug: "ruwatan-uborampe" },
@@ -22,91 +20,59 @@ async function seedCategories() {
   const createdCategories: Record<string, string> = {};
 
   console.log('[Seed] Seeding categories...');
-  for (const cat of categories) {
+  for (const cat of seedData) {
     try {
-      // Check if exists
-      const { data: existing, error: fetchError } = await supabase
-        .from('categories')
-        .select('id')
-        .eq('slug', cat.slug)
-        .single();
-
-      if (existing) {
+      const existing = await db.select({ id: categories.id }).from(categories).where(eq(categories.slug, cat.slug)).limit(1);
+      if (existing.length > 0) {
         console.log(`[Seed] Category '${cat.name}' already exists.`);
-        createdCategories[cat.slug] = existing.id;
+        createdCategories[cat.slug] = existing[0].id;
         continue;
       }
-
-      // Create
-      const { data: record, error: createError } = await supabase
-        .from('categories')
-        .insert(cat)
-        .select('id')
-        .single();
-
-      if (createError) throw createError;
-
-      if (record) {
-        console.log(`[Seed] Created category '${cat.name}'.`);
-        createdCategories[cat.slug] = record.id;
-      }
+      const result = await db.insert(categories).values(cat).returning({ id: categories.id });
+      console.log(`[Seed] Created category '${cat.name}'.`);
+      createdCategories[cat.slug] = result[0].id;
     } catch (error: any) {
       console.error(`[Seed] Failed to seed category '${cat.name}':`, error.message);
     }
   }
-
   return createdCategories;
 }
 
 async function seedProducts(categoryIds: Record<string, string>) {
-  const products = [
+  const seedData = [
     {
       name: "Dupa Aroma Kemakmuran",
       slug: "dupa-aroma-kemakmuran",
-      category_id: categoryIds["dupa"],
-      price: 150000,
+      categoryId: categoryIds["dupa"],
+      price: "150000",
       description: "<p>Dupa herbal premium isi 30 stick.</p>",
-      shopee_url: "https://shopee.co.id/example",
-      is_active: true,
+      shopeeUrl: "https://shopee.co.id/example",
+      isActive: true,
     },
     {
       name: "Ruwatan Reguler Komplit",
       slug: "ruwatan-reguler-komplit",
-      category_id: categoryIds["ruwatan-uborampe"],
-      price: 500000,
+      categoryId: categoryIds["ruwatan-uborampe"],
+      price: "500000",
       description: "<p>Paket ruwatan pembersihan diri.</p>",
-      shopee_url: "",
-      is_active: true,
+      shopeeUrl: "",
+      isActive: true,
     }
   ];
 
   console.log('[Seed] Seeding products...');
-  for (const prod of products) {
-    if (!prod.category_id) {
-      console.warn(`[Seed] Skipping product '${prod.name}' because its category is missing.`);
+  for (const prod of seedData) {
+    if (!prod.categoryId) {
+      console.warn(`[Seed] Skipping product '${prod.name}' — category missing.`);
       continue;
     }
-
     try {
-      // Check if exists
-      const { data: existing } = await supabase
-        .from('products')
-        .select('id')
-        .eq('slug', prod.slug)
-        .single();
-
-      if (existing) {
+      const existing = await db.select({ id: products.id }).from(products).where(eq(products.slug, prod.slug)).limit(1);
+      if (existing.length > 0) {
         console.log(`[Seed] Product '${prod.name}' already exists.`);
         continue;
       }
-
-      // Create
-      const { error: createError } = await supabase
-        .from('products')
-        .insert(prod);
-
-      if (createError) throw createError;
-      
+      await db.insert(products).values(prod);
       console.log(`[Seed] Created product '${prod.name}'.`);
     } catch (error: any) {
       console.error(`[Seed] Failed to seed product '${prod.name}':`, error.message);
@@ -115,15 +81,11 @@ async function seedProducts(categoryIds: Record<string, string>) {
 }
 
 async function main() {
-  console.log(`[Seed] Connecting to Supabase at ${supabaseUrl}...`);
-  
-  // Note: if you only have anon key, you might need to authenticate first depending on RLS.
-  // If RLS allows public inserts, or if you use service_role_key, auth isn't strictly necessary.
-  
+  console.log('[Seed] Connecting to database...');
   const categoryIds = await seedCategories();
   await seedProducts(categoryIds);
-
   console.log('[Seed] Database seeded successfully!');
+  process.exit(0);
 }
 
-main().catch(console.error);
+main().catch(e => { console.error(e); process.exit(1); });

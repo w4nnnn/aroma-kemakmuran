@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { createClient } from "./supabase/client";
 import { useRouter } from "next/navigation";
+import { getCategories } from "./actions/categories";
+import { getProducts } from "./actions/products";
 
 interface AdminContextType {
   products: any[];
@@ -18,39 +20,29 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(true); 
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
     fetchData();
-    
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
-      } else if (event === 'SIGNED_IN') {
-        setIsAuthenticated(true);
-      }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') setIsAuthenticated(false);
+      else if (event === 'SIGNED_IN') setIsAuthenticated(true);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => { subscription.unsubscribe(); };
   }, []);
 
   const fetchData = async () => {
     try {
-      const [catsRes, prodsRes] = await Promise.all([
-        supabase.from('categories').select('*').order('name'),
-        supabase.from('products').select('*').order('created_at', { ascending: false })
+      const [cats, prods] = await Promise.all([
+        getCategories(),
+        getProducts()
       ]);
-      
-      if (catsRes.error) throw catsRes.error;
-      if (prodsRes.error) throw prodsRes.error;
-      
-      setCategories(catsRes.data || []);
-      setProducts(prodsRes.data || []);
+      setCategories(cats);
+      setProducts(prods);
       setIsAuthenticated(true);
     } catch (error) {
       console.error("Failed to fetch admin data", error);
@@ -60,16 +52,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, pass: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: pass,
-      });
-      
-      if (error) {
-        console.error('Login error:', error);
-        return false;
-      }
-      
+      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      if (error) return false;
       setIsAuthenticated(true);
       fetchData();
       return true;

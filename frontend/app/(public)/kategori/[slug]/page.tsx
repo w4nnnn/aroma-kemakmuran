@@ -1,46 +1,33 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getCategoryBySlug } from "@/lib/actions/categories";
+import { getActiveProductsByCategory } from "@/lib/actions/products";
 import { notFound } from "next/navigation";
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
-  const supabase = await createClient();
-  
-  try {
-    const { data: category, error: catError } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('slug', resolvedParams.slug)
-      .single();
 
-    if (catError || !category) throw new Error("Category not found");
+  const category = await getCategoryBySlug(resolvedParams.slug);
+  if (!category) notFound();
 
-    const { data: products, error: prodError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('category_id', category.id)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+  const products = await getActiveProductsByCategory(category.id);
 
-    if (prodError) throw new Error("Failed to load products");
+  return (
+    <div className="container mx-auto px-4 py-12">
+      <h1 className="font-serif text-4xl md:text-5xl text-gold-primary mb-12 border-b border-gold-primary/20 pb-6">
+        {category.name}
+      </h1>
 
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <h1 className="font-serif text-4xl md:text-5xl text-gold-primary mb-12 border-b border-gold-primary/20 pb-6">
-          {category.name}
-        </h1>
-        
-        {!products || products.length === 0 ? (
-          <p className="text-text-muted">Belum ada produk di kategori ini.</p>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {products.map(product => {
-              const SUPABASE_STORAGE_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-media/`;
-              const imageUrl = product.image && product.image.length > 0 ? `${SUPABASE_STORAGE_URL}${product.image[0]}` : null;
-              
-              return (
-              <Link 
-                key={product.id} 
+      {!products || products.length === 0 ? (
+        <p className="text-text-muted">Belum ada produk di kategori ini.</p>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {products.map(product => {
+            const SUPABASE_STORAGE_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-media/`;
+            const imageUrl = product.image && product.image.length > 0 ? `${SUPABASE_STORAGE_URL}${product.image[0]}` : null;
+
+            return (
+              <Link
+                key={product.id}
                 href={`/produk/${product.slug}`}
                 className="group flex flex-col bg-maroon-elevated rounded-xl overflow-hidden border border-gold-primary/10 hover:border-gold-primary/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_10px_30px_rgba(212,175,55,0.05)]"
               >
@@ -62,12 +49,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   </div>
                 </div>
               </Link>
-            )})}
-          </div>
-        )}
-      </div>
-    );
-  } catch (error) {
-    notFound();
-  }
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }

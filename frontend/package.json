@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "seed": "tsx scripts/seed.ts",
+    "create-admin": "tsx scripts/create-admin.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -24,9 +27,11 @@
     "@tiptap/react": "^3.27.1",
     "@tiptap/starter-kit": "^3.27.1",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
     "gsap": "^3.15.0",
     "lucide-react": "^0.475.0",
     "next": "16.2.9",
+    "postgres": "^3.4.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwind-merge": "^3.6.0"
@@ -37,6 +42,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",

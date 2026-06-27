@@ -3,6 +3,7 @@
 .serena/
 .superpowers/
 .codegraph/
+.claude/
 
 # Media / Drafts
 *.jpeg
