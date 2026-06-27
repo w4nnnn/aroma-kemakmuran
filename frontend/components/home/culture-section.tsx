@@ -8,7 +8,7 @@ const cultures = [
   { title: "Tradisi Dupa", desc: "Simbol penyucian dan doa.", image: "/tradisi-dupa.jpg" },
   { title: "Ruwatan", desc: "Pembersihan diri dari energi negatif.", image: "/ruwatan.jpg" },
   { title: "Buka Aura", desc: "Memancarkan karisma positif.", image: "/buka-aura.jpg" },
-  { title: "Mustika Bertuah", desc: "Penguat perlindungan diri.", image: "/mustika-bertuah.jpg" },
+  { title: "Mustika Bertuah", desc: "Penguat perlindungan diri.", image: "/mustika.jpg" },
 ];
 
 export function CultureSection() {

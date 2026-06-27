@@ -22,7 +22,7 @@ export function ProductDescSection() {
       <div className="container mx-auto grid md:grid-cols-2 gap-16 items-center">
         <div className="relative aspect-video md:aspect-square rounded-xl overflow-hidden bg-[#2A0206] border border-gold-primary/20 desc-anim order-2 md:order-1 shadow-2xl shadow-black/40">
           <Image
-            src="/generate-image(1).jpg"
+            src="/product.jpg"
             alt="Kemasan premium dan 30 batang dupa herbal Aroma Kemakmuran"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"

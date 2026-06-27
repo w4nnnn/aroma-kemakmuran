@@ -37,7 +37,7 @@ export function HeroSection() {
         {/* Hero Image */}
         <div className="relative w-full mx-auto max-w-md md:max-w-none aspect-square md:aspect-[4/3] rounded-xl overflow-hidden bg-maroon-elevated border border-gold-primary/20 hero-anim shadow-2xl shadow-black/50">
           <Image
-            src="/generate-image.jpg"
+            src="/hero.jpg"
             alt="Dupa herbal premium Aroma Kemakmuran yang menyala dengan asap yang menenangkan"
             fill
             priority
