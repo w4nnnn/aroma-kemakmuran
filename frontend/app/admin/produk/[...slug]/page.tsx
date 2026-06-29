@@ -139,7 +139,7 @@ export default function ProductFormPage({ params }: { params: Promise<{ slug: st
           <div className="space-y-2"><label className="text-sm text-[#F5F2EB]">Nama Produk *</label>
             <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className={inputClass} /></div>
           <div className="space-y-2"><label className="text-sm text-[#F5F2EB]">Harga (Rp) *</label>
-            <input type="number" required value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className={inputClass} /></div>
+            <input type="text" required value={formData.price ? formData.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : ""} onChange={e => setFormData({...formData, price: e.target.value.replace(/\D/g, "")})} className={inputClass} /></div>
         </div>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-2"><label className="text-sm text-[#F5F2EB]">Kategori *</label>
